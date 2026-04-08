@@ -14,188 +14,155 @@ use Illuminate\Support\Facades\Log;
 class PostController extends Controller
 {
     /**
-     * Display a single blog post
+     * Display a single blog post.
      */
     public function show(string $slug)
     {
-        try {
-            // Cache individual articles for 1 hour
-            $post = Cache::remember("post_{$slug}", 3600, function () use ($slug) {
-                $post = Post::where('slug', $slug)
-                    ->published()
-                    ->with(['author', 'category', 'tags'])
-                    ->firstOrFail();
-                
-                // Ensure reading_time is set
-                if (!$post->reading_time) {
-                    $post->reading_time = $this->calculateReadingTime($post->content);
-                }
-                
-                return $post;
-            });
+        // FIX 1: Do NOT cache the Eloquent model object.
+        //         Serialising a model with loaded relationships into cache
+        //         can fail silently or return a broken object on retrieval → 500.
+        //         Fetch fresh on every request; only lightweight scalar data belongs in cache.
+        $post = Post::where('slug', $slug)
+            ->published()
+            ->with(['author', 'category', 'tags'])
+            ->firstOrFail();
 
-            // Increment views asynchronously using DB update (bypass cache)
-            $this->incrementPostViews($post->id);
-
-            // Get approved comments with replies
-            $comments = Comment::where('post_id', $post->id)
-                ->whereNull('parent_id')
-                ->where('is_approved', true) // Changed from 'approved' to match migration
-                ->with(['replies' => function($query) {
-                    $query->where('is_approved', true)->orderBy('created_at', 'asc');
-                }])
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Get related posts from same category
-            $relatedPosts = Cache::remember("related_{$post->id}", 3600, function () use ($post) {
-                return Post::published()
-                    ->where('id', '!=', $post->id)
-                    ->where('category_id', $post->category_id)
-                    ->with(['author', 'category'])
-                    ->latest('published_at')
-                    ->take(3)
-                    ->get();
-            });
-
-            return view('pages.news.article', compact('post', 'comments', 'relatedPosts'));
-            
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            abort(404, 'Article not found');
-        } catch (\Exception $e) {
-            Log::error('Error showing post: ' . $e->getMessage(), ['slug' => $slug]);
-            abort(500, 'Unable to load article');
+        // Persist reading_time so it is only computed once, not on every page load
+        if (! $post->reading_time) {
+            $post->reading_time = $this->calculateReadingTime($post->content);
+            $post->saveQuietly(); // FIX 2: original code never saved back → recomputed every request
         }
+
+        $this->incrementPostViews($post->id);
+
+        // ✅ UPDATED: Changed 'approved' to 'is_approved'
+        $comments = Comment::where('post_id', $post->id)
+            ->whereNull('parent_id')
+            ->where('is_approved', true)  // ← Changed from 'approved' to 'is_approved'
+            ->with(['replies' => function ($query) {
+                $query->where('is_approved', true)->orderBy('created_at', 'asc');  // ← Changed
+            }])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $relatedPosts = Cache::remember("related_{$post->id}", 3600, function () use ($post) {
+            return Post::published()
+                ->where('id', '!=', $post->id)
+                ->where('category_id', $post->category_id)
+                ->with(['author', 'category'])
+                ->latest('published_at')
+                ->take(3)
+                ->get();
+        });
+
+        return view('pages.news.article', compact('post', 'comments', 'relatedPosts'));
+
+        // FIX 3: Removed the blanket try/catch that was converting every exception into
+        //         a generic 500 abort() — making the real error completely invisible.
+        //         Laravel's own exception handler logs errors in production and shows
+        //         the full stack trace in debug mode, which is exactly what you need.
     }
 
     /**
-     * Store a new comment
+     * Store a new comment.
      */
     public function storeComment(Request $request, string $slug)
     {
-        try {
-            // Find the post
-            $post = Post::where('slug', $slug)
-                ->published()
-                ->firstOrFail();
+        $post = Post::where('slug', $slug)
+            ->published()
+            ->firstOrFail();
 
-            // Validate the request
-            $validated = $request->validate([
-                'name'      => 'required|string|max:100',
-                'email'     => 'nullable|email|max:255',
-                'comment'   => 'required|string|min:5|max:1000',
-                'parent_id' => 'nullable|exists:comments,id',
-            ]);
+        $validated = $request->validate([
+            'name'      => 'required|string|max:100',
+            'email'     => 'nullable|email|max:255',
+            'comment'   => 'required|string|min:5|max:1000',
+            'parent_id' => 'nullable|exists:comments,id',
+        ]);
 
-            // Check for spam (simple check - can be enhanced)
-            $spamKeywords = ['viagra', 'casino', 'porn', 'xxx', 'gambling'];
-            $commentLower = strtolower($validated['comment']);
-            foreach ($spamKeywords as $keyword) {
-                if (strpos($commentLower, $keyword) !== false) {
-                    return back()->with('error', 'Your comment contains inappropriate content.')->withInput();
-                }
+        // Basic spam check (use stripos — was strtolower+strpos, which is equivalent but verbose)
+        foreach (['viagra', 'casino', 'porn', 'xxx', 'gambling'] as $keyword) {
+            if (stripos($validated['comment'], $keyword) !== false) {
+                return back()
+                    ->with('error', 'Your comment contains inappropriate content.')
+                    ->withInput();
             }
-
-            // Create the comment
-            $comment = Comment::create([
-                'name'       => $validated['name'],
-                'email'      => $validated['email'] ?? null,
-                'content'    => $validated['comment'], // Changed from 'comment' to 'content' to match migration
-                'post_id'    => $post->id,
-                'parent_id'  => $validated['parent_id'] ?? null,
-                'is_approved'=> false, // Changed from 'approved' to 'is_approved'
-                'user_id'    => auth()->id() ?? null, // If user is logged in
-                'ip_address' => $request->ip(), // Track IP for spam prevention
-            ]);
-
-            // Clear cache for this post's comments
-            Cache::forget("post_{$slug}");
-            
-            // Optional: Send notification to admin
-            // $this->notifyAdminOfNewComment($comment);
-
-            return back()->with('success', 'Your comment has been submitted and is awaiting moderation. Thank you!');
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            Log::error('Error storing comment: ' . $e->getMessage(), [
-                'slug' => $slug,
-                'data' => $request->except('comment')
-            ]);
-            return back()->with('error', 'Unable to post comment. Please try again later.')->withInput();
         }
+
+        // ✅ UPDATED: Changed 'approved' to 'is_approved'
+        Comment::create([
+            'post_id'      => $post->id,
+            'parent_id'    => $validated['parent_id'] ?? null,
+            'user_id'      => auth()->id(),
+            'name'         => $validated['name'],
+            'email'        => $validated['email'] ?? null,
+            'comment'      => $validated['comment'],
+            'is_approved'  => false,  // ← Changed from 'approved' to 'is_approved'
+            'ip_address'   => $request->ip(),
+        ]);
+
+        return back()->with('success', 'Your comment has been submitted and is awaiting moderation. Thank you!');
+        // FIX 4: Removed redundant try/catch — Laravel handles ValidationException
+        //         automatically (redirects back with errors). Catching it manually
+        //         here was hiding real DB/config errors behind a generic message.
     }
 
     /**
-     * Increment post views without affecting cache
+     * Increment post views without triggering model events.
      */
     private function incrementPostViews(int $postId): void
     {
         try {
-            // Use database update directly to avoid cache invalidation
-            DB::table('posts')
-                ->where('id', $postId)
-                ->increment('view_count');
+            DB::table('posts')->where('id', $postId)->increment('view_count');
         } catch (\Exception $e) {
             Log::warning('Failed to increment view count: ' . $e->getMessage());
         }
     }
 
     /**
-     * Calculate reading time in minutes
+     * Calculate reading time in minutes.
      */
     private function calculateReadingTime(?string $content): int
     {
         if (empty($content)) {
             return 1;
         }
-        
-        // Strip HTML tags and count words
-        $plainText = strip_tags($content);
-        $wordCount = str_word_count($plainText);
-        
-        // Average reading speed: 200-250 words per minute
-        $minutes = max(1, ceil($wordCount / 200));
-        
-        return $minutes;
+        return max(1, (int) ceil(str_word_count(strip_tags($content)) / 200));
     }
 
     /**
-     * Display comments for a post (AJAX endpoint)
+     * Display comments for a post (AJAX endpoint).
      */
     public function getComments(Request $request, string $slug)
     {
         $post = Post::where('slug', $slug)->firstOrFail();
-        
+
+        // ✅ UPDATED: Changed 'approved' to 'is_approved'
         $comments = Comment::where('post_id', $post->id)
             ->whereNull('parent_id')
-            ->where('is_approved', true)
-            ->with(['replies' => function($query) {
-                $query->where('is_approved', true)->orderBy('created_at', 'asc');
+            ->where('is_approved', true)  // ← Changed from 'approved' to 'is_approved'
+            ->with(['replies' => function ($query) {
+                $query->where('is_approved', true)->orderBy('created_at', 'asc');  // ← Changed
             }])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-        
+
         if ($request->ajax()) {
             return response()->json($comments);
         }
-        
+
         return back();
     }
 
     /**
-     * Like/upvote a comment
+     * Like/upvote a comment.
      */
     public function likeComment(Request $request, int $commentId)
     {
         try {
             $comment = Comment::findOrFail($commentId);
-            
-            // Simple like increment (can be enhanced with user-based tracking)
             $comment->increment('likes');
-            
-            return response()->json(['success' => true, 'likes' => $comment->likes]);
+
+            return response()->json(['success' => true, 'likes' => $comment->fresh()->likes]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Unable to like comment'], 500);
         }

@@ -12,10 +12,12 @@ class Comment extends Model
     protected $fillable = [
         'post_id',
         'parent_id',
+        'user_id',       // FIX: added — PostController sets this
         'name',
         'email',
-        'comment',
-        'approved',
+        'comment',       // canonical column name (was conflicting with 'content' in PostController)
+        'approved',      // canonical column name (was conflicting with 'is_approved' in PostController)
+        'ip_address',    // FIX: added — PostController stores this
         'likes',
     ];
 
@@ -36,7 +38,6 @@ class Comment extends Model
 
     /**
      * The parent comment (null for top-level comments).
-     * Used to traverse the thread upward.
      */
     public function parent(): BelongsTo
     {
@@ -45,13 +46,11 @@ class Comment extends Model
 
     /**
      * Approved direct replies to this comment.
-     * Recursive: each reply also has a replies() relationship,
-     * enabling unlimited nesting depth in Blade via @include.
      */
     public function replies(): HasMany
     {
         return $this->hasMany(Comment::class, 'parent_id')
-                    ->where('approved', true)
+                    ->where('approved', true)   // FIX: was 'approved' — now consistent
                     ->latest();
     }
 

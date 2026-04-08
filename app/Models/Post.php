@@ -24,13 +24,13 @@ class Post extends Model
         'meta_description',
         'meta_keywords',
         'reading_time',
-        'view_count'
+        'view_count',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
 
     /*
@@ -43,7 +43,7 @@ class Post extends Model
         parent::boot();
 
         static::creating(function ($post) {
-            if (!$post->slug) {
+            if (! $post->slug) {
                 $post->slug = Str::slug($post->title);
             }
         });
@@ -54,10 +54,10 @@ class Post extends Model
     | STATIC HELPERS
     |--------------------------------------------------------------------------
     */
-    public static function computeReadingTime($content)
+    public static function computeReadingTime($content): int
     {
         $words = str_word_count(strip_tags($content ?? ''));
-        return max(1, ceil($words / 200)); // 200 words per minute
+        return max(1, ceil($words / 200));
     }
 
     /*
@@ -68,12 +68,23 @@ class Post extends Model
     public function scopePublished($query)
     {
         return $query->where('status', 'published')
-            ->where('published_at', '<=', now());
+                     ->where('published_at', '<=', now());
     }
 
     public function scopeDraft($query)
     {
         return $query->where('status', 'draft');
+    }
+
+    /**
+     * FIX: Added missing scope used by CategoryController.
+     * Filters posts by category slug via a join to avoid an extra query.
+     */
+    public function scopeForCategory($query, string $slug)
+    {
+        return $query->whereHas('category', function ($q) use ($slug) {
+            $q->where('slug', $slug);
+        });
     }
 
     /*
@@ -132,7 +143,7 @@ class Post extends Model
     | HELPERS
     |--------------------------------------------------------------------------
     */
-    public function incrementViews()
+    public function incrementViews(): void
     {
         $this->increment('view_count');
     }

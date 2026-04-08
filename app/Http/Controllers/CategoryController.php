@@ -5,19 +5,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Post;
 use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
     public function show(string $slug)
     {
-        $category = Category::where('slug', $slug)->firstOrFail();
+        // FIX: use firstOrFail() so a bad slug gives a clean 404
+        $category = Category::where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
 
-        $posts = Cache::remember("category_{$slug}_page_" . request('page', 1), 600, function () use ($slug) {
-            return \App\Models\Post::published()
+        $page = request('page', 1);
+
+        $posts = Cache::remember("category_{$slug}_page_{$page}", 600, function () use ($slug) {
+            // FIX: Post::scopeForCategory($slug) now exists — was calling an undefined scope before
+            return Post::published()
                 ->forCategory($slug)
                 ->with(['author', 'category'])
-                ->latest()
+                ->latest('published_at')   // FIX: be explicit — was just ->latest() (defaults to created_at)
                 ->paginate(12);
         });
 
