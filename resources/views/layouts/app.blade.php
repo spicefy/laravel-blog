@@ -39,6 +39,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+   <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        display: ['Lora', 'serif'],
+                    },
+                    colors: {
+                        navy: '#1a2c5b',
+                        royal: '#2755c8',
+                        mid: '#4a72e8',
+                        klight: '#eef2fb',
+                        kgreen: '#1a7a45',
+                        korange: '#d97706',
+                        kbg: '#f7f8fa',
+                        kborder: '#e2e6ed',
+                        muted: '#6b7280',
+                        /* Category Colors */
+                        ctech: '#2755c8',
+                        cpol: '#1a2c5b',
+                        cbiz: '#1a7a45',
+                        cent: '#b45309',
+                        csport: '#6d28d9',
+                        cedu: '#0369a1',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body class="bg-kbg font-body antialiased text-gray-800">
 

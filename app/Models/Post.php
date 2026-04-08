@@ -145,6 +145,6 @@ class Post extends Model
     */
     public function incrementViews(): void
     {
-        $this->increment('view_count');
+        $this->increment('view_count', 1);
     }
 }

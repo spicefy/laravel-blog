@@ -60,6 +60,7 @@
     @endforeach
   </div>
 
+  
   {{-- Recent Posts Section --}}
   <div class="flex items-center gap-4 mb-6">
     <h2 class="font-display font-semibold text-xl text-navy shrink-0">Recently published</h2>
