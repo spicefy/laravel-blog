@@ -6,11 +6,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>@yield('title', 'Admin') – Kusoma CMS</title>
   <meta name="robots" content="noindex, nofollow">
-
+<script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:wght@0,400;0,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
+   <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        display: ['Lora', 'serif'],
+                    },
+                    colors: {
+                        navy: '#1a2c5b',
+                        royal: '#2755c8',
+                        mid: '#4a72e8',
+                        klight: '#eef2fb',
+                        kgreen: '#1a7a45',
+                        korange: '#d97706',
+                        kbg: '#f7f8fa',
+                        kborder: '#e2e6ed',
+                        muted: '#6b7280',
+                        /* Category Colors */
+                        ctech: '#2755c8',
+                        cpol: '#1a2c5b',
+                        cbiz: '#1a7a45',
+                        cent: '#b45309',
+                        csport: '#6d28d9',
+                        cedu: '#0369a1',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body class="h-full bg-kbg font-body antialiased text-gray-800">
 
@@ -30,7 +60,7 @@
     {{-- Nav --}}
     <nav class="flex-1 px-3 py-4 space-y-0.5" aria-label="Admin navigation">
 
-      <a href="{{ route('admin.dashboard') }}"
+      <a href="{{ route('dashboard') }}"
          class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
                 {{ request()->routeIs('admin.dashboard') ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}
                 transition-colors">
@@ -73,13 +103,25 @@
         <span class="flex items-center gap-2.5">
           <i class="fas fa-comments w-4 text-center text-xs"></i> Comments
         </span>
-        @php $pending = \App\Models\Comment::pending()->count(); @endphp
-        @if($pending > 0)
+        {{-- Count only pending comments (where is_approved = false) --}}
+        @php 
+          $pendingCount = \App\Models\Comment::where('is_approved', false)->count(); 
+        @endphp
+        @if($pendingCount > 0)
           <span class="text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">
-            {{ $pending }}
+            {{ $pendingCount }}
           </span>
         @endif
       </a>
+
+      {{-- Optional: Quick moderation link for pending comments only --}}
+      @if($pendingCount > 0)
+      <a href="{{ route('admin.comments.index', ['filter' => 'pending']) }}"
+         class="flex items-center gap-2.5 pl-8 pr-3 py-1.5 rounded-lg text-xs text-white/50 hover:bg-white/10 hover:text-white/70 transition-colors">
+        <i class="fas fa-clock w-3 text-center"></i> 
+        <span>Pending approval ({{ $pendingCount }})</span>
+      </a>
+      @endif
 
       <div class="pt-3 pb-1 px-3">
         <p class="text-[10px] font-semibold uppercase tracking-widest text-white/30">Site</p>
@@ -133,6 +175,11 @@
     @if(session('error'))
     <div class="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
       <i class="fas fa-circle-exclamation shrink-0"></i> {{ session('error') }}
+    </div>
+    @endif
+    @if(session('warning'))
+    <div class="mx-6 mt-4 bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
+      <i class="fas fa-triangle-exclamation shrink-0"></i> {{ session('warning') }}
     </div>
     @endif
 
