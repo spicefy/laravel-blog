@@ -1,108 +1,206 @@
 <?php
 
-use App\Http\Controllers\AuthorController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\PostController;
-use App\Http\Controllers\SearchController;
-use App\Http\Controllers\TagController;
-use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
+
+// Controllers
+use App\Http\Controllers\{
+    AuthorController,
+    CategoryController,
+    HomeController,
+    PostController,
+    SearchController,
+    WelcomeController,
+    ProfileController,
+    DashboardController,
+    CommentController
+};
+
+// Admin Controllers
+use App\Http\Controllers\Admin\{
+    DashboardController as AdminDashboardController,
+    PostController as AdminPostController,
+    CategoryController as AdminCategoryController,
+    TagController as AdminTagController,
+    CommentController as AdminCommentController
+};
+
+// Sitemap
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 
-// ─── Root landing page (/) — sits BEFORE /news ───────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES
+|--------------------------------------------------------------------------
+*/
 
+// Landing page (ONLY define once)
 Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
-// ─── Search ──────────────────────────────────────────────────────────────────
-
-Route::get('/search', [SearchController::class, 'index'])->name('search');
-
-// ─── Author profiles ─────────────────────────────────────────────────────────
-
-Route::get('/author/{id}', [AuthorController::class, 'show'])
-     ->name('author.show')
-     ->where('id', '[0-9]+');
-
-// ─── Main news routes ────────────────────────────────────────────────────────
-
+// News homepage
 Route::get('/news', [HomeController::class, 'index'])->name('news.index');
 
+// Single post (SEO friendly slug)
 Route::get('/news/{slug}', [PostController::class, 'show'])
-     ->name('post.show')
-     ->where('slug', '[a-z0-9\-]+');
+    ->name('post.show')
+    ->where('slug', '[a-z0-9\-]+');
 
+// Store comment (rate limited)
 Route::post('/news/{slug}/comments', [PostController::class, 'storeComment'])
-     ->name('post.comment')
-     ->middleware('throttle:5,1');  // 5 comments per minute per IP
+    ->name('post.comment')
+    ->middleware('throttle:5,1'); // max 5 per minute
 
+// Search
+Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+// Author profile
+Route::get('/author/{id}', [AuthorController::class, 'show'])
+    ->name('author.show')
+    ->where('id', '[0-9]+');
+
+// Category
 Route::get('/category/{slug}', [CategoryController::class, 'show'])
-     ->name('category.show')
-     ->where('slug', '[a-z0-9\-]+');
+    ->name('category.show')
+    ->where('slug', '[a-z0-9\-]+');
 
-Route::get('/tag/{slug}', [TagController::class, 'show'])
-     ->name('tag.show')
-     ->where('slug', '[a-z0-9\-]+');
+// Tag
+Route::get('/tag/{slug}', [AdminTagController::class, 'show'])
+    ->name('tag.show')
+    ->where('slug', '[a-z0-9\-]+');
 
-// ─── Admin routes ────────────────────────────────────────────────────────────
 
-Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED USER ROUTES
+|--------------------------------------------------------------------------
+*/
 
-    Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
-         ->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Posts
-    Route::resource('posts', \App\Http\Controllers\Admin\PostController::class);
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 
-    // Categories
-    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
-
-    // Tags
-    Route::resource('tags', \App\Http\Controllers\Admin\TagController::class)
-         ->only(['index', 'store', 'destroy']);
-
-    // Comments
-    Route::get('comments', [\App\Http\Controllers\Admin\CommentController::class, 'index'])
-         ->name('comments.index');
-    Route::patch('comments/{comment}/approve', [\App\Http\Controllers\Admin\CommentController::class, 'approve'])
-         ->name('comments.approve');
-    Route::patch('comments/approve-all', [\App\Http\Controllers\Admin\CommentController::class, 'approveAll'])
-         ->name('comments.approveAll');
-    Route::delete('comments/{comment}', [\App\Http\Controllers\Admin\CommentController::class, 'destroy'])
-         ->name('comments.destroy');
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// ─── SEO: XML Sitemap (cached, auto-regenerated hourly) ──────────────────────
 
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'verified'])
+    ->group(function () {
+
+        // Admin Dashboard
+        Route::get('/', [AdminDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        /*
+        |-----------------------------------
+        | Posts
+        |-----------------------------------
+        */
+        Route::resource('posts', AdminPostController::class);
+
+        /*
+        |-----------------------------------
+        | Categories
+        |-----------------------------------
+        */
+        Route::resource('categories', AdminCategoryController::class);
+
+        /*
+        |-----------------------------------
+        | Tags
+        |-----------------------------------
+        */
+        Route::resource('tags', AdminTagController::class)
+            ->except(['show']); // no public show
+
+        /*
+        |-----------------------------------
+        | Comments Management
+        |-----------------------------------
+        */
+        Route::get('comments', [AdminCommentController::class, 'index'])
+            ->name('comments.index');
+
+        Route::patch('comments/{comment}/approve', [AdminCommentController::class, 'approve'])
+            ->name('comments.approve');
+
+        Route::patch('comments/{comment}/disapprove', [AdminCommentController::class, 'disapprove'])
+            ->name('comments.disapprove');
+
+        Route::patch('comments/approve-all', [AdminCommentController::class, 'approveAll'])
+            ->name('comments.approveAll');
+
+        Route::post('comments/bulk-approve', [AdminCommentController::class, 'bulkApprove'])
+            ->name('comments.bulk-approve');
+
+        Route::delete('comments/{comment}', [AdminCommentController::class, 'destroy'])
+            ->name('comments.destroy');
+
+        Route::delete('comments/bulk-delete', [AdminCommentController::class, 'bulkDelete'])
+            ->name('comments.bulk-delete');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES (Laravel Breeze / Jetstream)
+|--------------------------------------------------------------------------
+*/
+require __DIR__ . '/auth.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| SEO ROUTES
+|--------------------------------------------------------------------------
+*/
+
+// Sitemap (cached for performance)
 Route::get('/sitemap.xml', function () {
     return cache()->remember('sitemap_xml', now()->addHour(), function () {
-        $sitemap = Sitemap::create()
-            ->add(Url::create('/')
-                ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
-                ->setPriority(1.0))
-            ->add(Url::create('/news')
-                ->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)
-                ->setPriority(0.9));
 
-        // All published posts
+        $sitemap = Sitemap::create()
+            ->add(
+                Url::create('/')
+                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
+                    ->setPriority(1.0)
+            )
+            ->add(
+                Url::create('/news')
+                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)
+                    ->setPriority(0.9)
+            );
+
+        // Posts
         \App\Models\Post::where('status', 'published')
-            ->orderByDesc('published_at')
+            ->latest('published_at')
             ->each(function ($post) use ($sitemap) {
                 $sitemap->add(
                     Url::create("/news/{$post->slug}")
-                       ->setLastModificationDate($post->updated_at)
-                       ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
-                       ->setPriority(0.8)
+                        ->setLastModificationDate($post->updated_at)
+                        ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
+                        ->setPriority(0.8)
                 );
             });
 
-        // Category pages
+        // Categories
         \App\Models\Category::all()->each(function ($cat) use ($sitemap) {
             $sitemap->add(
                 Url::create("/category/{$cat->slug}")
-                   ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
-                   ->setPriority(0.6)
+                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
+                    ->setPriority(0.6)
             );
         });
 
@@ -110,9 +208,10 @@ Route::get('/sitemap.xml', function () {
     });
 })->name('sitemap');
 
-// ─── SEO: News RSS Feed ──────────────────────────────────────────────────────
 
+// RSS Feed
 Route::get('/feed.xml', function () {
+
     $posts = \App\Models\Post::published()
         ->with(['author', 'category'])
         ->latest()
@@ -122,14 +221,17 @@ Route::get('/feed.xml', function () {
     return response()
         ->view('feeds.rss', compact('posts'))
         ->header('Content-Type', 'application/rss+xml; charset=utf-8');
+
 })->name('feed.rss');
 
-// ─── robots.txt ──────────────────────────────────────────────────────────────
 
+// robots.txt
 Route::get('/robots.txt', function () {
+
     return response(
         "User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: " . url('/sitemap.xml') . "\n",
         200,
         ['Content-Type' => 'text/plain']
     );
+
 })->name('robots');

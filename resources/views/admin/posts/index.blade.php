@@ -1,119 +1,80 @@
-{{-- resources/views/admin/posts/index.blade.php --}}
 @extends('layouts.admin')
-@section('title', 'Posts')
 
-@section('topbar_actions')
-  {{-- Filter by status --}}
-  <div class="flex items-center gap-1 bg-kbg border border-kborder rounded-lg p-0.5 text-sm">
-    @foreach(['all' => 'All', 'published' => 'Published', 'draft' => 'Drafts'] as $val => $label)
-    <a href="{{ route('admin.posts.index', ['status' => $val === 'all' ? null : $val]) }}"
-       class="px-3 py-1 rounded-md transition-colors
-              {{ (request('status', 'all') === $val) ? 'bg-white shadow-sm text-navy font-medium' : 'text-muted hover:text-navy' }}">
-      {{ $label }}
-    </a>
-    @endforeach
-  </div>
-@endsection
+@section('title', 'Manage Posts')
 
 @section('content')
-
-<div class="bg-white border border-kborder rounded-xl overflow-hidden">
-
-  {{-- Table header --}}
-  <div class="grid grid-cols-12 gap-4 px-5 py-3 border-b border-kborder bg-kbg text-xs font-semibold text-muted uppercase tracking-wide">
-    <div class="col-span-6">Title</div>
-    <div class="col-span-2">Category</div>
-    <div class="col-span-1 text-center">Status</div>
-    <div class="col-span-1 text-center">Views</div>
-    <div class="col-span-1 text-right">Published</div>
-    <div class="col-span-1 text-right">Actions</div>
-  </div>
-
-  <div class="divide-y divide-kborder">
-    @forelse($posts as $post)
-    <div class="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-kbg transition-colors">
-
-      {{-- Title --}}
-      <div class="col-span-6 min-w-0">
-        <a href="{{ route('admin.posts.edit', $post) }}"
-           class="text-sm font-medium text-kgreen hover:underline block truncate">
-          {{ $post->title }}
+<div class="container mx-auto px-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Posts</h1>
+        <a href="{{ route('admin.posts.create') }}"
+           class="inline-flex items-center bg-gray-800 hover:bg-green-900 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition">
+            + Create New Post
         </a>
-        <div class="text-xs text-muted mt-0.5 flex items-center gap-1.5">
-          <span>{{ $post->author->name }}</span>
-          @if($post->tags->isNotEmpty())
-            <span>·</span>
-            <span class="truncate">{{ $post->tags->pluck('name')->join(', ') }}</span>
-          @endif
+    </div>
+    
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {{ session('success') }}
         </div>
-      </div>
-
-      {{-- Category --}}
-      <div class="col-span-2">
-        <span class="text-xs font-medium text-{{ $post->category->css_suffix }}">
-          {{ $post->category->name }}
-        </span>
-      </div>
-
-      {{-- Status badge --}}
-      <div class="col-span-1 flex justify-center">
-        <span class="text-[11px] font-medium px-2 py-0.5 rounded-full
-          {{ $post->status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
-          {{ ucfirst($post->status) }}
-        </span>
-      </div>
-
-      {{-- Views --}}
-      <div class="col-span-1 text-center text-sm text-muted">
-        {{ number_format($post->view_count) }}
-      </div>
-
-      {{-- Date --}}
-      <div class="col-span-1 text-right text-xs text-muted">
-        @if($post->published_at)
-          <time datetime="{{ $post->published_at->toIso8601String() }}">
-            {{ $post->published_at->format('M j, Y') }}
-          </time>
-        @else
-          <span class="italic">—</span>
-        @endif
-      </div>
-
-      {{-- Actions --}}
-      <div class="col-span-1 flex items-center justify-end gap-2">
-        <a href="{{ route('post.show', $post->slug) }}" target="_blank"
-           class="text-muted hover:text-royal transition-colors" title="View live">
-          <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-        </a>
-        <a href="{{ route('admin.posts.edit', $post) }}"
-           class="text-muted hover:text-royal transition-colors" title="Edit">
-          <i class="fas fa-pen text-xs"></i>
-        </a>
-        <form action="{{ route('admin.posts.destroy', $post) }}" method="POST"
-              onsubmit="return confirm('Delete \'{{ addslashes($post->title) }}\'?')">
-          @csrf @method('DELETE')
-          <button class="text-muted hover:text-red-500 transition-colors" title="Delete">
-            <i class="fas fa-trash text-xs"></i>
-          </button>
-        </form>
-      </div>
-
+    @endif
+    
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach($posts as $post)
+                <tr>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900">{{ $post->title }}</div>
+                        <div class="text-xs text-gray-500">{{ $post->created_at->format('M d, Y') }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {{ $post->category->name ?? 'Uncategorized' }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-1">
+                            @forelse($post->tags as $tag)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                    {{ $tag->name }}
+                                </span>
+                            @empty
+                                <span class="text-xs text-gray-400 italic">No tags</span>
+                            @endforelse
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $post->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                            {{ ucfirst($post->status) }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ number_format($post->view_count) }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{{ route('admin.posts.edit', $post) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                        <form action="{{ route('admin.posts.destroy', $post) }}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
-    @empty
-    <div class="px-5 py-10 text-center text-muted">
-      <i class="fas fa-newspaper text-2xl mb-2 block opacity-30"></i>
-      No posts found.
-      <a href="{{ route('admin.posts.create') }}" class="text-royal hover:underline ml-1">Create one →</a>
+    
+    <div class="mt-4">
+        {{ $posts->links() }}
     </div>
-    @endforelse
-  </div>
-
-  {{-- Pagination --}}
-  @if($posts->hasPages())
-  <div class="px-5 py-3.5 border-t border-kborder bg-kbg">
-    {{ $posts->appends(request()->query())->links() }}
-  </div>
-  @endif
-
 </div>
 @endsection

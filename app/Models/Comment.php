@@ -2,99 +2,55 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Comment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'post_id',
-        'parent_id',
-        'user_id',       // FIX: added — PostController sets this
-        'name',
-        'email',
-        'comment',       // canonical column name (was conflicting with 'content' in PostController)
-        'approved',      // canonical column name (was conflicting with 'is_approved' in PostController)
-        'ip_address',    // FIX: added — PostController stores this
-        'likes',
+        'user_id',
+        'user_name',
+        'user_email',
+        'content',
+        'is_approved'
     ];
 
     protected $casts = [
-        'approved' => 'boolean',
-        'likes'    => 'integer',
+        'is_approved' => 'boolean',
     ];
 
-    // =========================================================================
-    // Relationships
-    // =========================================================================
-
-    /** The post this comment belongs to. */
-    public function post(): BelongsTo
+    /**
+     * Get the post that owns the comment.
+     */
+    public function post()
     {
         return $this->belongsTo(Post::class);
     }
 
     /**
-     * The parent comment (null for top-level comments).
+     * Get the user that owns the comment.
      */
-    public function parent(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(Comment::class, 'parent_id');
+        return $this->belongsTo(User::class);
     }
 
     /**
-     * Approved direct replies to this comment.
+     * Scope a query to only approved comments.
      */
-    public function replies(): HasMany
+    public function scopeApproved($query)
     {
-        return $this->hasMany(Comment::class, 'parent_id')
-                    ->where('approved', true)   // FIX: was 'approved' — now consistent
-                    ->latest();
+        return $query->where('is_approved', true);
     }
 
-    // =========================================================================
-    // Scopes
-    // =========================================================================
-
-    /** Only approved comments. */
-    public function scopeApproved(Builder $query): Builder
+    /**
+     * Scope a query to only pending comments.
+     */
+    public function scopePending($query)
     {
-        return $query->where('approved', true);
-    }
-
-    /** Only top-level comments (no parent). */
-    public function scopeTopLevel(Builder $query): Builder
-    {
-        return $query->whereNull('parent_id');
-    }
-
-    /** Pending moderation. */
-    public function scopePending(Builder $query): Builder
-    {
-        return $query->where('approved', false);
-    }
-
-    // =========================================================================
-    // Helpers
-    // =========================================================================
-
-    /** Returns true when this comment is a reply to another. */
-    public function isReply(): bool
-    {
-        return ! is_null($this->parent_id);
-    }
-
-    /** Approve this comment and save. */
-    public function approve(): bool
-    {
-        return $this->update(['approved' => true]);
-    }
-
-    /** Increment like count with a single UPDATE — no model reload needed. */
-    public function incrementLikes(): void
-    {
-        static::where('id', $this->id)->increment('likes');
+        return $query->where('is_approved', false);
     }
 }
