@@ -1,196 +1,452 @@
-{{-- resources/views/layouts/admin.blade.php --}}
+@props(['title' => 'Dashboard', 'activeSection' => null])
+
+@php
+    // ── Auth guard ──────────────────────────────────────────────────────────────
+    $user         = auth()->user();
+    $isGuest      = is_null($user);
+
+    $adminName    = $user?->name    ?? '';
+    $adminEmail   = $user?->email   ?? '';
+    $adminInitial = $adminName ? strtoupper(mb_substr($adminName, 0, 1)) : '?';
+    
+    // ── Simple role assignment (no Spatie package needed) ──────────────────────
+    $adminRole = 'Admin'; // Default role
+    
+    // ── Active section ──────────────────────────────────────────────────────────
+    $activeSection = $activeSection ?? request()->segment(2) ?? 'index';
+
+    // ── Navigation (same as before) ────────────────────────────────────────────
+    $nav = [
+        'Overview' => [
+            ['key' => 'index',     'icon' => 'fa-table-cells', 'label' => 'Dashboard', 'url' => '/dashboard'],
+            ['key' => 'analytics', 'icon' => 'fa-chart-line',  'label' => 'Analytics', 'url' => '/analytics'],
+        ],
+        'Content' => [
+            ['key' => 'posts',          'icon' => 'fa-newspaper', 'label' => 'Posts',          'url' => null,                       'badge' => ['n' => 14, 'cls' => 'bg-red-500']],
+            ['key' => 'exams',          'icon' => 'fa-folder',    'label' => 'Exams',          'url' => '/dashboard/exams'],
+            ['key' => 'grade-subjects', 'icon' => 'fa-book',      'label' => 'Grade Subjects', 'url' => '/dashboard/grade-subject'],
+            ['key' => 'comments',       'icon' => 'fa-comments',  'label' => 'Comments',       'url' => '/dashboard/grade-subject', 'badge' => ['n' => 6, 'cls' => 'bg-korange']],
+            ['key' => 'tags',           'icon' => 'fa-tags',      'label' => 'Tags',           'url' => null],
+        ],
+        'Community' => [
+            ['key' => 'Users',   'icon' => 'fa-users', 'label' => 'Users & Members', 'url' => '/dashboard/users'],
+            ['key' => 'reports', 'icon' => 'fa-flag',  'label' => 'Reports',         'url' => null, 'badge' => ['n' => 9, 'cls' => 'bg-red-500', 'pulse' => true]],
+            ['key' => 'bans',    'icon' => 'fa-ban',   'label' => 'Bans',            'url' => null],
+        ],
+        'System' => [
+            ['key' => 'settings', 'icon' => 'fa-gear',     'label' => 'Settings',    'url' => null],
+            ['key' => 'logs',     'icon' => 'fa-terminal', 'label' => 'System Logs', 'url' => null],
+        ],
+    ];
+
+    // ── Notifications (same as before) ──────────────────────────────────────────
+    $notifications = $isGuest ? [] : [
+        [
+            'icon'      => 'fa-user-plus',
+            'iconBg'    => 'bg-blue-100',
+            'iconColor' => 'text-blue-500',
+            'title'     => 'New member joined',
+            'body'      => 'ZaraHealthNG just registered',
+            'time'      => '2m ago',
+            'unread'    => true,
+        ],
+        [
+            'icon'      => 'fa-flag',
+            'iconBg'    => 'bg-green-100',
+            'iconColor' => 'text-red-400',
+            'title'     => 'New report filed',
+            'body'      => 'TrollBuster99 was reported',
+            'time'      => '15m ago',
+            'unread'    => true,
+        ],
+    ];
+@endphp
+
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+{{-- resources/views/layouts/admin.blade.php --}}
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>@yield('title', 'Admin') – Kusoma CMS</title>
-  <meta name="robots" content="noindex, nofollow">
-<script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:wght@0,400;0,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
-   <script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Kusoma Dashboard – {{ $title }}</title>
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- 1. Tailwind CDN --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    {{-- 2. Tailwind config (must come AFTER CDN script) --}}
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['DM Sans', 'sans-serif'],
-                        display: ['Lora', 'serif'],
-                    },
+                    fontFamily: { sans: ['DM Sans', 'sans-serif'], display: ['Lora', 'serif'] },
                     colors: {
-                        navy: '#1a2c5b',
-                        royal: '#2755c8',
-                        mid: '#4a72e8',
-                        klight: '#eef2fb',
-                        kgreen: '#1a7a45',
+                        navy:    '#1a2c5b',
+                        royal:   '#2755c8',
+                        mid:     '#4a72e8',
+                        klight:  '#eef2fb',
+                        kgreen:  '#1a7a45',
                         korange: '#d97706',
-                        kbg: '#f7f8fa',
+                        kbg:     '#f7f8fa',
                         kborder: '#e2e6ed',
-                        muted: '#6b7280',
-                        /* Category Colors */
-                        ctech: '#2755c8',
-                        cpol: '#1a2c5b',
-                        cbiz: '#1a7a45',
-                        cent: '#b45309',
-                        csport: '#6d28d9',
-                        cedu: '#0369a1',
-                    }
-                }
-            }
-        }
+                        muted:   '#6b7280',
+                    },
+                },
+            },
+        };
     </script>
+
+    {{-- 3. Fonts & icons --}}
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        /* ── Layout transitions ───────────────────────── */
+        #sidebar      { transition: transform .3s cubic-bezier(.4,0,.2,1), width .3s cubic-bezier(.4,0,.2,1); }
+        #main-content { transition: margin-left .3s cubic-bezier(.4,0,.2,1); }
+
+        /* ── Nav items ────────────────────────────────── */
+        .nav-item.active                  { background: rgba(255,255,255,.12); color: #fff; }
+        .nav-item.active .nav-icon        { color: #7da8f5; }
+        .nav-item:not(.active):hover      { background: rgba(255,255,255,.07); }
+        .tr-hover:hover                   { background: #f7f8fa; }
+
+        /* ── Pulse animation ──────────────────────────── */
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .pulse { animation: pulse-dot 2s infinite; }
+
+        /* ── Scrollbar ────────────────────────────────── */
+        ::-webkit-scrollbar       { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d9e6; border-radius:8px; }
+
+        /* ── Dropdown styles ──────────────────────────── */
+        .dropdown-menu {
+            display: none;
+        }
+        .dropdown-menu.open,
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        /* ── Sidebar avatar menu ──────────────────────── */
+        #avatar-menu {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        #avatar-menu.open,
+        #avatar-menu.show {
+            display: block;
+        }
+
+        /* ── Collapsed sidebar ────────────────────────── */
+        .sidebar-collapsed .nav-label,
+        .sidebar-collapsed .sidebar-logo-text,
+        .sidebar-collapsed .sidebar-section-label { display: none; }
+        .sidebar-collapsed { width: 68px !important; }
+
+        /* ── Collapsed tooltip ────────────────────────── */
+        #sidebar-tooltip {
+            position: fixed;
+            z-index: 50;
+            padding: 2px 8px;
+            background: #111827;
+            color: #fff;
+            font-size: 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .15s;
+            display: none;
+        }
+        #sidebar-tooltip::before {
+            content: '';
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 4px 4px 4px 0;
+            border-style: solid;
+            border-color: transparent #111827 transparent transparent;
+        }
+
+        /* ── Auth modal ───────────────────────────────── */
+        #auth-modal-backdrop {
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        /* ── Utility classes ──────────────────────────── */
+        .hidden {
+            display: none;
+        }
+    </style>
+
+    {{ $styles ?? '' }}
 </head>
-<body class="h-full bg-kbg font-body antialiased text-gray-800">
 
-<div class="flex h-full min-h-screen">
+<body class="bg-kbg font-sans text-gray-900 antialiased flex h-screen overflow-hidden">
 
-  {{-- ── Sidebar ────────────────────────────────────────────────────────── --}}
-  <aside class="w-56 shrink-0 bg-navy text-white flex flex-col sticky top-0 h-screen overflow-y-auto">
+    {{-- ════════════════════════════════════════════════════════════
+         UNAUTHENTICATED: show a blocking modal, hide shell content
+         ════════════════════════════════════════════════════════════ --}}
+    @if ($isGuest ?? false)
+        <div id="auth-modal-backdrop"
+             class="fixed inset-0 z-[9999] bg-navy/70 flex items-center justify-center px-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center">
 
-    {{-- Wordmark --}}
-    <div class="px-5 py-4 border-b border-white/10">
-      <a href="{{ route('home') }}" class="font-display font-bold text-xl tracking-tight">
-        Kusoma
-      </a>
-      <p class="text-[11px] text-white/40 mt-0.5">Content Management</p>
+                {{-- Logo mark --}}
+                <div class="w-12 h-12 bg-royal rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <span class="font-display font-semibold text-white text-xl">K</span>
+                </div>
+
+                <h2 class="font-display font-semibold text-navy text-xl mb-1">Access Restricted</h2>
+                <p class="text-sm text-muted mb-6">
+                    You need to be signed in to view the Kusoma dashboard.
+                </p>
+
+                <a href="{{ route('login') }}"
+                   class="block w-full bg-royal hover:bg-mid text-white text-sm font-semibold py-2.5 rounded-lg transition-colors mb-3">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                </a>
+
+                <a href="{{ route('register') }}"
+                   class="block w-full bg-kbg hover:bg-kborder text-navy text-sm font-semibold py-2.5 rounded-lg border border-kborder transition-colors">
+                    <i class="fas fa-user-plus mr-2"></i>Create an Account
+                </a>
+
+                <p class="text-[11px] text-muted mt-5">
+                    &copy; {{ date('Y') }} Kusoma · Admin Panel
+                </p>
+            </div>
+        </div>
+
+        {{-- Render nothing else for guests --}}
+    @else
+
+    {{-- ════════════════════════════════════════════════════════════
+         AUTHENTICATED: full dashboard shell
+         ════════════════════════════════════════════════════════════ --}}
+
+    @include('partials.sidebar', [
+        'activeSection' => $activeSection ?? 'index',
+        'nav'           => $nav ?? [],
+        'adminName'     => $adminName ?? '',
+        'adminEmail'    => $adminEmail ?? '',
+        'adminInitial'  => $adminInitial ?? '?',
+        'adminRole'     => $adminRole ?? 'Admin',
+    ])
+
+    <div id="mob-overlay"
+         class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"
+         onclick="closeSidebar()">
     </div>
 
-    {{-- Nav --}}
-    <nav class="flex-1 px-3 py-4 space-y-0.5" aria-label="Admin navigation">
+    <div id="main-content" class="flex-1 flex flex-col overflow-hidden min-w-0">
 
-      <a href="{{ route('dashboard') }}"
-         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
-                {{ request()->routeIs('admin.dashboard') ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}
-                transition-colors">
-        <i class="fas fa-gauge-high w-4 text-center text-xs"></i> Dashboard
-      </a>
+        @include('partials.topbar', [
+            'title'         => $title ?? 'Dashboard',
+            'adminName'     => $adminName ?? '',
+            'adminEmail'    => $adminEmail ?? '',
+            'adminInitial'  => $adminInitial ?? '?',
+            'notifications' => $notifications ?? [],
+        ])
 
-      <div class="pt-3 pb-1 px-3">
-        <p class="text-[10px] font-semibold uppercase tracking-widest text-white/30">Content</p>
-      </div>
+        <div id="page-area" class="flex-1 overflow-y-auto flex flex-col">
 
-      <a href="{{ route('admin.posts.index') }}"
-         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
-                {{ request()->routeIs('admin.posts.*') ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}
-                transition-colors">
-        <i class="fas fa-newspaper w-4 text-center text-xs"></i> Posts
-      </a>
+            @yield('content')
 
-      <a href="{{ route('admin.categories.index') }}"
-         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
-                {{ request()->routeIs('admin.categories.*') ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}
-                transition-colors">
-        <i class="fas fa-folder-open w-4 text-center text-xs"></i> Categories
-      </a>
+            <footer class="border-t border-kborder bg-white px-5 lg:px-7 py-4 mt-auto shrink-0">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-display font-semibold text-navy text-[15px]">kusoma</span>
+                        <span class="text-kborder">·</span>
+                        <span class="text-[12px] text-muted">Admin Panel v3.4.1</span>
+                        <span class="hidden sm:inline text-kborder">·</span>
+                        <span class="hidden sm:inline text-[12px] text-muted">
+                            Environment: <span class="text-kgreen font-medium">Production</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-4 text-[12px] text-muted">
+                        <a href="#" class="hover:text-royal transition-colors">Documentation</a>
+                        <a href="#" class="hover:text-royal transition-colors">Support</a>
+                        <a href="#" class="hover:text-royal transition-colors">Changelog</a>
+                        <span class="text-kborder hidden sm:inline">·</span>
+                        <span class="hidden sm:inline">&copy; {{ date('Y') }} Kusoma</span>
+                    </div>
+                </div>
+            </footer>
 
-      <a href="{{ route('admin.tags.index') }}"
-         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
-                {{ request()->routeIs('admin.tags.*') ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}
-                transition-colors">
-        <i class="fas fa-tags w-4 text-center text-xs"></i> Tags
-      </a>
-
-      <div class="pt-3 pb-1 px-3">
-        <p class="text-[10px] font-semibold uppercase tracking-widest text-white/30">Community</p>
-      </div>
-
-      <a href="{{ route('admin.comments.index') }}"
-         class="flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg text-sm
-                {{ request()->routeIs('admin.comments.*') ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }}
-                transition-colors">
-        <span class="flex items-center gap-2.5">
-          <i class="fas fa-comments w-4 text-center text-xs"></i> Comments
-        </span>
-        {{-- Count only pending comments (where is_approved = false) --}}
-        @php 
-          $pendingCount = \App\Models\Comment::where('is_approved', false)->count(); 
-        @endphp
-        @if($pendingCount > 0)
-          <span class="text-[10px] font-bold bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">
-            {{ $pendingCount }}
-          </span>
-        @endif
-      </a>
-
-      {{-- Optional: Quick moderation link for pending comments only --}}
-      @if($pendingCount > 0)
-      <a href="{{ route('admin.comments.index', ['filter' => 'pending']) }}"
-         class="flex items-center gap-2.5 pl-8 pr-3 py-1.5 rounded-lg text-xs text-white/50 hover:bg-white/10 hover:text-white/70 transition-colors">
-        <i class="fas fa-clock w-3 text-center"></i> 
-        <span>Pending approval ({{ $pendingCount }})</span>
-      </a>
-      @endif
-
-      <div class="pt-3 pb-1 px-3">
-        <p class="text-[10px] font-semibold uppercase tracking-widest text-white/30">Site</p>
-      </div>
-
-      <a href="{{ route('home') }}" target="_blank"
-         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors">
-        <i class="fas fa-arrow-up-right-from-square w-4 text-center text-xs"></i> View site
-      </a>
-
-    </nav>
-
-    {{-- User --}}
-    <div class="px-4 py-3 border-t border-white/10 flex items-center gap-2.5">
-      <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'Admin') }}&background=2755c8&color=fff&size=32"
-           class="w-8 h-8 rounded-full shrink-0" alt="You" width="32" height="32" />
-      <div class="min-w-0 flex-1">
-        <p class="text-xs font-medium text-white truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
-        <form action="{{ route('logout') }}" method="POST">
-          @csrf
-          <button type="submit" class="text-[11px] text-white/40 hover:text-white transition-colors">
-            Sign out
-          </button>
-        </form>
-      </div>
+        </div>
     </div>
 
-  </aside>
+    <div id="sidebar-tooltip"></div>
 
-  {{-- ── Main area ──────────────────────────────────────────────────────── --}}
-  <div class="flex-1 flex flex-col min-w-0 overflow-auto">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
 
-    {{-- Top bar --}}
-    <div class="sticky top-0 z-10 bg-white border-b border-kborder px-6 py-3 flex items-center justify-between gap-4">
-      <h1 class="text-base font-semibold text-gray-900">@yield('title', 'Dashboard')</h1>
-      <div class="flex items-center gap-3">
-        @yield('topbar_actions')
-        <a href="{{ route('admin.posts.create') }}"
-           class="bg-royal hover:bg-navy text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
-          <i class="fas fa-plus text-xs"></i> New Post
-        </a>
-      </div>
-    </div>
+            // ── Sidebar ──────────────────────────────────────────────
+            const sidebar    = document.getElementById('sidebar');
+            const mobOverlay = document.getElementById('mob-overlay');
 
-    {{-- Flash messages --}}
-    @if(session('success'))
-    <div class="mx-6 mt-4 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
-      <i class="fas fa-circle-check shrink-0"></i> {{ session('success') }}
-    </div>
-    @endif
-    @if(session('error'))
-    <div class="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
-      <i class="fas fa-circle-exclamation shrink-0"></i> {{ session('error') }}
-    </div>
-    @endif
-    @if(session('warning'))
-    <div class="mx-6 mt-4 bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
-      <i class="fas fa-triangle-exclamation shrink-0"></i> {{ session('warning') }}
-    </div>
-    @endif
+            window.openSidebar = function () {
+                sidebar?.classList.remove('-translate-x-full');
+                mobOverlay?.classList.remove('hidden');
+            };
 
-    {{-- Page content --}}
-    <main class="flex-1 p-6">
-      @yield('content')
-    </main>
+            window.closeSidebar = function () {
+                if (window.innerWidth < 1024) {
+                    sidebar?.classList.add('-translate-x-full');
+                    mobOverlay?.classList.add('hidden');
+                }
+            };
 
-  </div>
-</div>
+            let collapsed = false;
+            window.toggleSidebar = function () {
+                if (!sidebar) return;
+                collapsed = !collapsed;
+                sidebar.classList.toggle('sidebar-collapsed', collapsed);
+            };
 
-@stack('scripts')
+            // ── Sidebar Tooltips (collapsed desktop only) ────────────
+            const tooltip = document.getElementById('sidebar-tooltip');
+
+            const isSidebarCollapsed = () => sidebar?.classList.contains('sidebar-collapsed');
+            const isDesktop = () => window.innerWidth >= 1024;
+
+            function showTooltip(el, text) {
+                if (!tooltip || !el) return;
+                const rect = el.getBoundingClientRect();
+                tooltip.textContent   = text;
+                tooltip.style.display = 'block';
+                tooltip.style.left    = (rect.right + 10) + 'px';
+                tooltip.style.top     = (rect.top + rect.height / 2 - 10) + 'px';
+                setTimeout(() => { tooltip.style.opacity = '1'; }, 10);
+            }
+
+            function hideTooltip() {
+                if (!tooltip) return;
+                tooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (tooltip.style.opacity === '0') tooltip.style.display = 'none';
+                }, 200);
+            }
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('mouseenter', function () {
+                    if (isDesktop() && isSidebarCollapsed()) {
+                        const text = this.getAttribute('data-tooltip');
+                        if (text) showTooltip(this, text);
+                    }
+                });
+                item.addEventListener('mouseleave', hideTooltip);
+            });
+
+            if (sidebar) {
+                new MutationObserver(() => {
+                    if (!isSidebarCollapsed()) hideTooltip();
+                }).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+            }
+
+            window.addEventListener('resize', () => {
+                if (!isSidebarCollapsed() || !isDesktop()) hideTooltip();
+            });
+
+            // ── DROPDOWN TOGGLES ──────────────────────────────────────
+            // Toggle dropdowns when clicking on trigger buttons
+            const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
+            
+            dropdownToggles.forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const dropdownId = this.getAttribute('data-dropdown-toggle');
+                    const dropdown = document.getElementById(dropdownId);
+                    
+                    if (dropdown) {
+                        // Close all other dropdowns first
+                        document.querySelectorAll('.dropdown-menu, [id$="-menu"]').forEach(menu => {
+                            if (menu.id !== dropdownId) {
+                                menu.classList.add('hidden');
+                                menu.classList.remove('open', 'show');
+                            }
+                        });
+                        
+                        // Toggle the current dropdown
+                        dropdown.classList.toggle('hidden');
+                        dropdown.classList.toggle('open');
+                        dropdown.classList.toggle('show');
+                    }
+                });
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                // Check if click is outside any dropdown toggle and dropdown menu
+                const isInsideToggle = e.target.closest('[data-dropdown-toggle]');
+                const isInsideDropdown = e.target.closest('.dropdown-menu, [id$="-menu"]');
+                
+                if (!isInsideToggle && !isInsideDropdown) {
+                    document.querySelectorAll('.dropdown-menu, [id$="-menu"]').forEach(menu => {
+                        menu.classList.add('hidden');
+                        menu.classList.remove('open', 'show');
+                    });
+                }
+            });
+            
+            // ── Avatar Menu Dropdown ─────────────────────────────────
+            const avatarBtn = document.getElementById('avatar-btn');
+            const avatarMenu = document.getElementById('avatar-menu');
+            
+            if (avatarBtn && avatarMenu) {
+                avatarBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    avatarMenu.classList.toggle('hidden');
+                    avatarMenu.classList.toggle('open');
+                    avatarMenu.classList.toggle('show');
+                });
+            }
+            
+            // ── Notification Dropdown ────────────────────────────────
+            const notificationBtn = document.getElementById('notification-btn');
+            const notificationMenu = document.getElementById('notification-menu');
+            
+            if (notificationBtn && notificationMenu) {
+                notificationBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    notificationMenu.classList.toggle('hidden');
+                    notificationMenu.classList.toggle('open');
+                    notificationMenu.classList.toggle('show');
+                });
+            }
+            
+            // ── User Dropdown (alternative) ──────────────────────────
+            const userMenuBtn = document.getElementById('user-menu-button');
+            const userDropdown = document.getElementById('user-dropdown');
+            
+            if (userMenuBtn && userDropdown) {
+                userMenuBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    userDropdown.classList.toggle('hidden');
+                    userDropdown.classList.toggle('open');
+                    userDropdown.classList.toggle('show');
+                });
+            }
+        });
+    </script>
+
+    {{ $scripts ?? '' }}
+
+    @endif {{-- end @if ($isGuest) --}}
+
 </body>
 </html>
