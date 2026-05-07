@@ -3,18 +3,38 @@
 @section('title', 'Comments')
 
 @section('content')
-<div class="space-y-6">
+<div class="px-6 lg:px-8 py-6 space-y-5">
+
+    {{-- ── PAGE HEADER ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="font-display font-semibold text-2xl text-ink leading-tight">Comments</h1>
+            <p class="text-sm text-muted mt-0.5">Manage, Moderate, and approve user comments</p>
+        </div>
+        <div class="flex items-center gap-2.5 shrink-0">
+            <a href="{{ route('dashboard.posts.create') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold transition-all"
+               style="background:#E8372C; box-shadow:0 4px 14px rgba(232,55,44,.32);"
+               onmouseenter="this.style.background='#C0211A'"
+               onmouseleave="this.style.background='#E8372C'">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                </svg>
+                New Article
+            </a>
+        </div>
+    </div>
 
   {{-- Filter tabs --}}
   <div class="bg-white border border-kborder rounded-xl overflow-hidden">
     <div class="border-b border-kborder bg-kbg">
       <div class="flex gap-1 p-1">
-        <a href="{{ route('admin.comments.index') }}" 
+        <a href="{{ route('dashboard.comments.index') }}" 
            class="px-4 py-2 text-sm font-medium rounded-lg transition-colors
                   {{ !request('filter') ? 'bg-white text-royal shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
           All Comments
         </a>
-        <a href="{{ route('admin.comments.index', ['filter' => 'pending']) }}" 
+        <a href="{{ route('dashboard.comments.index', ['filter' => 'pending']) }}" 
            class="px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2
                   {{ request('filter') === 'pending' ? 'bg-white text-royal shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
           <span>Pending</span>
@@ -23,7 +43,7 @@
             <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
           @endif
         </a>
-        <a href="{{ route('admin.comments.index', ['filter' => 'approved']) }}" 
+        <a href="{{ route('dashboard.comments.index', ['filter' => 'approved']) }}" 
            class="px-4 py-2 text-sm font-medium rounded-lg transition-colors
                   {{ request('filter') === 'approved' ? 'bg-white text-royal shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
           Approved
@@ -120,7 +140,7 @@
         {{-- Actions --}}
         <div class="col-span-1 flex justify-end gap-2">
           @if(!$comment->is_approved)
-          <form action="{{ route('admin.comments.approve', $comment) }}" method="POST" class="inline">
+          <form action="{{ route('dashboard.comments.approve', $comment) }}" method="POST" class="inline">
             @csrf
             @method('PATCH')
             <button type="submit" class="text-green-600 hover:text-green-700 transition-colors text-sm" title="Approve">
@@ -128,7 +148,7 @@
             </button>
           </form>
           @else
-          <form action="{{ route('admin.comments.disapprove', $comment) }}" method="POST" class="inline">
+          <form action="{{ route('dashboard.comments.disapprove', $comment) }}" method="POST" class="inline">
             @csrf
             @method('PATCH')
             <button type="submit" class="text-yellow-600 hover:text-yellow-700 transition-colors text-sm" title="Unapprove">
@@ -137,7 +157,7 @@
           </form>
           @endif
           
-          <form action="{{ route('admin.comments.destroy', $comment) }}" method="POST" class="inline"
+          <form action="{{ route('dashboard.comments.destroy', $comment) }}" method="POST" class="inline"
                 onsubmit="return confirm('Delete this comment?')">
             @csrf
             @method('DELETE')
@@ -281,7 +301,7 @@
       if (confirm(`Approve ${selected.length} comment(s)?`)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ route("admin.comments.bulk-approve") }}';
+        form.action = '{{ route("dashboard.comments.bulk-approve") }}';
         form.innerHTML = `
           @csrf
           <input type="hidden" name="comment_ids" value="${JSON.stringify(selected)}">
@@ -301,7 +321,7 @@
       if (confirm(`Delete ${selected.length} comment(s)? This cannot be undone.`)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ route("admin.comments.bulk-delete") }}';
+        form.action = '{{ route("dashboard.comments.bulk-delete") }}';
         form.innerHTML = `
           @csrf
           @method('DELETE')

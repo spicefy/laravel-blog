@@ -49,7 +49,7 @@
             ['label'=>'Drafts',           'val'=> $drafts,    'ico'=>'fa-file-pen',      'col'=>'#D97706'],
             ['label'=>'Breaking',         'val'=> $breaking,  'ico'=>'fa-bolt',          'col'=>'#7C3AED'],
         ] as $s)
-            <div class="bg-white rounded-xl border border-border px-4 py-3.5" style="box-shadow:0 1px 3px rgba(0,0,0,.05)">
+            <div class="bg-white rounded-xl bborder border-kborder px-4 py-3.5" style="box-shadow:0 1px 3px rgba(0,0,0,.05)">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-semibold uppercase tracking-widest text-muted">{{ $s['label'] }}</span>
                     <i class="fas {{ $s['ico'] }} text-sm" style="color:{{ $s['col'] }};opacity:.7"></i>
@@ -60,7 +60,7 @@
     </div>
 
     {{-- ── FILTER / SEARCH BAR ── --}}
-    <div class="bg-white rounded-xl border border-border px-4 py-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
+    <div class="bg-white rounded-xl border border-kborder px-4 py-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
          style="box-shadow:0 1px 3px rgba(0,0,0,.05)">
 
         {{-- Search --}}
@@ -96,7 +96,7 @@
     </div>
 
     {{-- ── ARTICLES TABLE ── --}}
-    <div class="bg-white rounded-xl border border-border overflow-hidden" style="box-shadow:0 1px 3px rgba(0,0,0,.05)">
+    <div class="bg-white rounded-xl border border-kborder overflow-hidden" style="box-shadow:0 1px 3px rgba(0,0,0,.05)">
         <table class="min-w-full">
             <thead>
                 <tr style="border-bottom:2px solid #F0F2F5; background:#FAFBFC;">

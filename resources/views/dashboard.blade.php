@@ -3,7 +3,7 @@
 @section('title', 'Dashboard 23')
 
 @section('content')
-
+<div class="px-6 lg:px-8 py-6 space-y-5">
 {{-- ── Stat cards ───────────────────────────────────────── --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
   @php
@@ -32,16 +32,16 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
   {{-- Recent posts --}}
-  <div class="bg-white border rounded-xl">
-    <div class="p-4 border-b flex justify-between">
+  <div class="bg-white border border-kborder rounded-xl">
+    <div class="p-4 border border-kborder flex justify-between">
       <h2>Recent posts</h2>
-      <a href="{{ route('admin.posts.index') }}">View all →</a>
+      <a href="{{ route('dashboard.posts.index') }}">View all →</a>
     </div>
 
     @forelse($recentPosts ?? [] as $post)
-    <div class="p-4 border-b flex justify-between">
+    <div class="p-4 border border-kborder flex justify-between">
       <div>
-        <a href="{{ route('admin.posts.edit', $post) }}">
+        <a href="{{ route('dashboard.posts.edit', $post) }}">
           {{ $post->title ?? 'Untitled' }}
         </a>
         <small class="block">
@@ -60,18 +60,18 @@
   </div>
 
   {{-- Comments --}}
-  <div class="bg-white border rounded-xl">
-    <div class="p-4 border-b flex justify-between">
+  <div class="bg-white border border-kborder rounded-xl">
+    <div class="p-4 border border-kborder flex justify-between">
       <h2>Pending comments</h2>
-      <a href="{{ route('admin.comments.index') }}">Moderate →</a>
+      <a href="{{ route('dashboard.comments.index') }}">Moderate →</a>
     </div>
 
     @forelse($latestPendingComments ?? [] as $comment)
-    <div class="p-4 border-b">
+    <div class="p-4 border border-kborder">
       <strong>{{ $comment->name }}</strong>
       <p>{{ \Illuminate\Support\Str::limit($comment->comment, 100) }}</p>
 
-      <form action="{{ route('admin.comments.approve', $comment) }}" method="POST">
+      <form action="{{ route('dashboard.comments.approve', $comment) }}" method="POST">
         @csrf
         @method('PATCH')
         <button>Approve</button>
@@ -86,16 +86,24 @@
 
 {{-- ── Top posts ───────────────────────────────────────── --}}
 @if(!empty($topPosts))
-<div class="mt-6 bg-white border rounded-xl">
-  <div class="p-4 border-b">
+<div class="mt-6 bg-white border border-kborder rounded-xl">
+  <div class="p-4 border border-kborder">
     <h2>Top posts</h2>
+    
   </div>
 
   @foreach($topPosts as $i => $post)
-  <div class="p-4 border-b flex justify-between">
-    <span>{{ $i + 1 }}. {{ $post->title }}</span>
+  <div class="p-4 border border-kborder flex justify-between">
+     
+         
+        
+    <span>{{ $i + 1 }}. 
+      <a href="{{ route('dashboard.posts.edit', $post) }}">
+    {{ $post->title }}</span>
+    </a>
     <span>{{ number_format($post->view_count) }} views</span>
   </div>
+  
   @endforeach
 </div>
 @endif

@@ -10,47 +10,62 @@ class Comment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'post_id',
-        'user_id',
-        'user_name',
-        'user_email',
-        'content',
-        'is_approved'
-    ];
+    'post_id',
+    'parent_id',
+    'name',
+    'email',
+    'comment', // FIXED
+    'approved',
+    'likes',
+];
 
     protected $casts = [
-        'is_approved' => 'boolean',
+        'approved' => 'boolean',
     ];
 
-    /**
-     * Get the post that owns the comment.
-     */
+    // ── Relationships ──────────────────────────────────────────────────────
+
     public function post()
     {
         return $this->belongsTo(Post::class);
     }
 
     /**
-     * Get the user that owns the comment.
+     * Direct parent comment (null for top-level comments).
      */
-    public function user()
+    public function parent()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Comment::class, 'parent_id');
     }
 
     /**
-     * Scope a query to only approved comments.
+     * Immediate child replies, with their own replies eager-loaded recursively.
      */
+    public function replies()
+    {
+        return $this->hasMany(Comment::class, 'parent_id')
+                    ->where('approved', true)
+                    ->with('replies')   // recursive eager-load
+                    ->oldest();
+    }
+
+    // ── Scopes ────────────────────────────────────────────────────────────
+
     public function scopeApproved($query)
     {
-        return $query->where('is_approved', true);
+        return $query->where('approved', true);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('approved', false);
     }
 
     /**
-     * Scope a query to only pending comments.
+     * Only top-level comments (not replies).
      */
-    public function scopePending($query)
+    public function scopeTopLevel($query)
     {
-        return $query->where('is_approved', false);
+        return $query->whereNull('parent_id');
     }
 }

@@ -21,7 +21,7 @@ class CategoryController extends Controller
             $editing = Category::findOrFail($request->edit);
         }
         
-        return view('admin.categories.index', compact('categories', 'editing'));
+        return view('dashboard.categories.index', compact('categories', 'editing'));
     }
 
     /**
@@ -30,7 +30,7 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        return redirect()->route('admin.categories.index');
+        return redirect()->route('dashboard.categories.index');
     }
 
     /**
@@ -61,7 +61,7 @@ class CategoryController extends Controller
 
         Category::create($validated);
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('dashboard.categories.index')
             ->with('success', 'Category created successfully.');
     }
 
@@ -80,7 +80,7 @@ class CategoryController extends Controller
      */
     public function edit(Category $category)
     {
-        return redirect()->route('admin.categories.index', ['edit' => $category->id]);
+        return redirect()->route('dashboard.categories.index', ['edit' => $category->id]);
     }
 
     /**
@@ -111,7 +111,7 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('dashboard.categories.index')
             ->with('success', 'Category updated successfully.');
     }
 
@@ -125,7 +125,7 @@ class CategoryController extends Controller
         
         $category->delete();
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('dashboard.categories.index')
             ->with('success', 'Category deleted successfully.');
     }
 }

@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Edit Post: {{ $post->title }}</h1>
         <div class="space-x-3">
-            <a href="{{ route('admin.posts.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+            <a href="{{ route('dashboard.posts.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                 Back to Posts
             </a>
             @if($post->status === 'published')
@@ -35,7 +35,7 @@
     @endif
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <form action="{{ route('admin.posts.update', $post) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('dashboard.posts.update', $post) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             
@@ -155,7 +155,7 @@
                     </select>
                     <p class="text-xs text-gray-500 mt-1">Hold Ctrl (Windows) or Cmd (Mac) to select multiple tags. Use Shift to select a range.</p>
                     @if($allTags->isEmpty())
-                        <p class="text-xs text-red-500 mt-1">No tags available. <a href="{{ route('admin.tags.index') }}" class="text-blue-500 hover:underline">Create a tag first</a>.</p>
+                        <p class="text-xs text-red-500 mt-1">No tags available. <a href="{{ route('dashboard.tags.index') }}" class="text-blue-500 hover:underline">Create a tag first</a>.</p>
                     @endif
                 </div>
 
@@ -198,7 +198,7 @@
             </div>
 
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                <a href="{{ route('admin.posts.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                <a href="{{ route('dashboard.posts.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
                     Cancel
                 </a>
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">

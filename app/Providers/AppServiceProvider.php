@@ -1,10 +1,11 @@
 <?php
-// app/Providers/AppServiceProvider.php
 
 namespace App\Providers;
 
 use App\Models\Post;
+use App\Models\Category;
 use App\Observers\PostObserver;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,17 +13,17 @@ class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        // Register the Post observer (auto reading_time, cache busting)
+        // Register observer
         Post::observe(PostObserver::class);
 
-        // Share category list with every view (used by nav + footer)
-        // Cached separately so it doesn't run a query on every render
+        // Share navigation categories globally
         View::composer('*', function ($view) {
-            $view->with('_navCategories', \Illuminate\Support\Facades\Cache::remember(
-                'nav_categories',
-                now()->addHours(6),
-                fn () => \App\Models\Category::orderBy('name')->get()
-            ));
+
+            $categories = Cache::remember('nav_categories', now()->addHours(6), function () {
+                return Category::orderBy('name')->get();
+            });
+
+            $view->with('_navCategories', $categories);
         });
     }
 }

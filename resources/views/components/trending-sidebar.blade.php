@@ -4,7 +4,7 @@
 @if($trendingPosts && $trendingPosts->isNotEmpty())
 <aside class="space-y-6">
     {{-- Trending Section --}}
-    <div class="bg-white rounded-xl border p-5">
+    <div class="bg-white rounded-xl border border-slate-200 p-5">
         <div class="flex items-center gap-2 mb-4">
             <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 3.5L11.5 7H15L12 9L13.5 12.5L10 10.5L6.5 12.5L8 9L5 7H8.5L10 3.5Z"/>
@@ -35,7 +35,7 @@
                         </h3>
                         
                         <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                            <span>👁️ {{ number_format($trend->view_count ?? 0) }} views</span>
+                            <span>👁 {{ number_format($trend->view_count ?? 0) }} views</span>
                             <span>💬 {{ $trend->comments_count ?? 0 }}</span>
                         </div>
                     </div>

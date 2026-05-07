@@ -45,11 +45,11 @@
                class="text-muted hover:text-royal text-xs" title="View archive">
               <i class="fas fa-arrow-up-right-from-square"></i>
             </a>
-            <a href="{{ route('admin.categories.edit', $category) }}"
+            <a href="{{ route('dashboard.categories.edit', $category) }}"
                class="text-muted hover:text-royal text-xs" title="Edit">
               <i class="fas fa-pen"></i>
             </a>
-            <form action="{{ route('admin.categories.destroy', $category) }}" method="POST"
+            <form action="{{ route('dashboard.categories.destroy', $category) }}" method="POST"
                   onsubmit="return confirm('Delete category \'{{ $category->name }}\'? All posts in it will be unlinked.')">
               @csrf @method('DELETE')
               <button class="text-muted hover:text-red-500 text-xs" title="Delete">
@@ -75,7 +75,7 @@
         </h2>
       </div>
 
-      <form action="{{ isset($editing) ? route('admin.categories.update', $editing) : route('admin.categories.store') }}"
+      <form action="{{ isset($editing) ? route('dashboard.categories.update', $editing) : route('dashboard.categories.store') }}"
             method="POST" class="p-5 space-y-4">
         @csrf
         @if(isset($editing)) @method('PUT') @endif
@@ -137,7 +137,7 @@
             {{ isset($editing) ? 'Update' : 'Add category' }}
           </button>
           @if(isset($editing))
-          <a href="{{ route('admin.categories.index') }}"
+          <a href="{{ route('dashboard.categories.index') }}"
              class="px-4 py-2 border border-kborder text-sm text-muted rounded-lg hover:bg-kbg transition-colors">
             Cancel
           </a>

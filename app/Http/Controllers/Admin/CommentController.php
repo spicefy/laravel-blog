@@ -26,7 +26,7 @@ class CommentController extends Controller
         
         $comments = $query->latest()->paginate(20);
         
-        return view('admin.comments.index', compact('comments'));
+        return view('dashboard.comments.index', compact('comments'));
     }
 
     /**
@@ -74,7 +74,7 @@ class CommentController extends Controller
             $comment->delete();
             
             return redirect()
-                ->route('admin.comments.index')
+                ->route('dashboard.comments.index')
                 ->with('success', 'Comment deleted successfully.');
         } catch (\Exception $e) {
             return redirect()

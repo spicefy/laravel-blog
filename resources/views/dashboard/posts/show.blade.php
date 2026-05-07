@@ -8,9 +8,9 @@
         <div class="flex justify-between items-start mb-4">
             <h1 class="text-2xl font-bold">{{ $post->title }}</h1>
             <div class="space-x-2">
-                <a href="{{ route('admin.posts.edit', $post) }}" 
+                <a href="{{ route('dashboard.posts.edit', $post) }}" 
                    class="text-blue-600 hover:text-blue-800">Edit</a>
-                <form action="{{ route('admin.posts.destroy', $post) }}" 
+                <form action="{{ route('dashboard.posts.destroy', $post) }}" 
                       method="POST" 
                       class="inline">
                     @csrf

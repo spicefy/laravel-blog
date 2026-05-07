@@ -37,13 +37,13 @@
   <div class="bg-white border border-kborder rounded-xl overflow-hidden">
     <div class="px-5 py-3.5 border-b border-kborder flex items-center justify-between">
       <h2 class="text-sm font-semibold text-gray-800">Recent posts</h2>
-      <a href="{{ route('admin.posts.index') }}" class="text-xs text-royal hover:underline">View all →</a>
+      <a href="{{ route('dashboard.posts.index') }}" class="text-xs text-royal hover:underline">View all →</a>
     </div>
     <div class="divide-y divide-kborder">
       @forelse($recentPosts as $post)
       <div class="px-5 py-3 flex items-start justify-between gap-3 hover:bg-kbg transition-colors">
         <div class="min-w-0">
-          <a href="{{ route('admin.posts.edit', $post) }}"
+          <a href="{{ route('dashboard.posts.edit', $post) }}"
              class="text-[13px] font-medium text-kgreen hover:underline block truncate">
             {{ $post->title }}
           </a>
@@ -79,7 +79,7 @@
           </span>
         @endif
       </h2>
-      <a href="{{ route('admin.comments.index') }}" class="text-xs text-royal hover:underline">Moderate →</a>
+      <a href="{{ route('dashboard.comments.index') }}" class="text-xs text-royal hover:underline">Moderate →</a>
     </div>
     <div class="divide-y divide-kborder">
       @forelse($latestPendingComments as $comment)
@@ -90,12 +90,12 @@
         </div>
         <p class="text-xs text-muted line-clamp-2 mb-2">{{ $comment->comment }}</p>
         <div class="flex gap-2">
-          <form action="{{ route('admin.comments.approve', $comment) }}" method="POST">
+          <form action="{{ route('dashboard.comments.approve', $comment) }}" method="POST">
             @csrf @method('PATCH')
             <button class="text-xs text-green-600 hover:underline font-medium">Approve</button>
           </form>
           <span class="text-muted text-xs">·</span>
-          <form action="{{ route('admin.comments.destroy', $comment) }}" method="POST"
+          <form action="{{ route('dashboard.comments.destroy', $comment) }}" method="POST"
                 onsubmit="return confirm('Delete this comment?')">
             @csrf @method('DELETE')
             <button class="text-xs text-red-500 hover:underline">Delete</button>
@@ -120,7 +120,7 @@
     <div class="px-5 py-3 flex items-center gap-4 hover:bg-kbg transition-colors">
       <span class="font-display font-bold text-xl text-kborder w-6 shrink-0">{{ $i + 1 }}</span>
       <div class="flex-1 min-w-0">
-        <a href="{{ route('admin.posts.edit', $post) }}"
+        <a href="{{ route('dashboard.posts.edit', $post) }}"
            class="text-[13px] font-medium text-kgreen hover:underline truncate block">
           {{ $post->title }}
         </a>

@@ -21,14 +21,14 @@
         <div class="col-span-2 text-center text-sm text-muted">{{ $tag->posts_count }}</div>
         <div class="col-span-1 flex justify-end gap-2">
           {{-- Edit button --}}
-          <a href="{{ route('admin.tags.edit', $tag) }}" 
+          <a href="{{ route('dashboard.tags.edit', $tag) }}" 
              class="text-muted hover:text-royal transition-colors text-xs"
              title="Edit tag">
             <i class="fas fa-edit"></i>
           </a>
           
           {{-- Delete button --}}
-          <form action="{{ route('admin.tags.destroy', $tag) }}" method="POST"
+          <form action="{{ route('dashboard.tags.destroy', $tag) }}" method="POST"
                 onsubmit="return confirm('Delete tag \'{{ $tag->name }}\'?')"
                 class="inline">
             @csrf
@@ -71,7 +71,7 @@
     </div>
     @endif
     
-    <form action="{{ route('admin.tags.store') }}" method="POST" class="p-5 space-y-3">
+    <form action="{{ route('dashboard.tags.store') }}" method="POST" class="p-5 space-y-3">
       @csrf
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">Tag Name <span class="text-red-500">*</span></label>

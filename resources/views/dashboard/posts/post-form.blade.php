@@ -141,7 +141,7 @@
               {{ $post->exists ? 'Update Post' : 'Create Post' }}
             </button>
             @if($post->exists)
-              <form action="{{ route('admin.posts.destroy', $post) }}" method="POST"
+              <form action="{{ route('dashboard.posts.destroy', $post) }}" method="POST"
                     onsubmit="return confirm('Permanently delete this post?')">
                 @csrf @method('DELETE')
                 <button type="submit" class="w-full text-xs text-red-500 hover:underline mt-1">Delete post</button>

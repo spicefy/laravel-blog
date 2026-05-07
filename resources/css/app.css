@@ -1,3 +1,82 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+@import "tailwindcss";
+
+/* ------------------------------
+   THEME TOKENS (Tailwind v4)
+------------------------------ */
+@theme {
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Lora", serif;
+
+    --color-navy: #1a2c5b;
+    --color-royal: #2755c8;
+    --color-mid: #4a72e8;
+    --color-klight: #eef2fb;
+    --color-kgreen: #1a7a45;
+    --color-korange: #d97706;
+    --color-kbg: #f7f8fa;
+    --color-kborder: #e2e6ed;
+    --color-muted: #6b7280;
+}
+
+/* ------------------------------
+   BASE
+------------------------------ */
+@layer base {
+    html {
+        font-family: var(--font-sans);
+    }
+
+    body {
+        @apply bg-kbg text-slate-800 antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: var(--font-display);
+    }
+
+    a {
+        @apply text-royal hover:text-mid transition-colors;
+    }
+}
+
+/* ------------------------------
+   COMPONENTS
+------------------------------ */
+@layer components {
+    .btn-primary {
+        @apply bg-royal text-white px-4 py-2 rounded-lg hover:bg-mid transition;
+    }
+
+    .btn-dark {
+        @apply bg-navy text-white px-4 py-2 rounded-lg hover:opacity-90 transition;
+    }
+
+    .card {
+        @apply bg-white border border-kborder rounded-xl shadow-sm p-4;
+    }
+
+    .input {
+        @apply w-full border border-kborder rounded-lg px-3 py-2 focus:ring-2 focus:ring-royal focus:outline-none;
+    }
+
+    #offcanvas {
+        transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+    }
+}
+
+/* ------------------------------
+   UTILITIES
+------------------------------ */
+@layer utilities {
+    .text-muted {
+        color: var(--color-muted);
+    }
+
+    .bg-soft {
+        background-color: var(--color-klight);
+    }
+}

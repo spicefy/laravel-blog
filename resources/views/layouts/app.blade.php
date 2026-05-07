@@ -33,14 +33,15 @@
 
   {{-- ── Feeds & extras ─────────────────────────────────────────────── --}}
   <link rel="alternate" type="application/rss+xml" title="Kusoma RSS" href="{{ route('feed.rss') }}">
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tailwind CSS 
+<script src="https://cdn.tailwindcss.com"></script>-->
   {{-- ── Fonts & CSS ─────────────────────────────────────────────────── --}}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-   <!-- Tailwind Custom Configuration -->
+   <!-- Tailwind Custom Configuration 
     <script>
         tailwind.config = {
             theme: {
@@ -70,7 +71,7 @@
                 }
             }
         }
-    </script>
+    </script>-->
 </head>
 <body class="bg-kbg font-body antialiased text-gray-800">
 

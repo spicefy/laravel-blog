@@ -12,16 +12,16 @@ use App\Http\Controllers\{
     WelcomeController,
     ProfileController,
     DashboardController,
-    CommentController
+    CommentController,
 };
 
 // Admin Controllers
 use App\Http\Controllers\Admin\{
     DashboardController as AdminDashboardController,
-    PostController as AdminPostController,
+    PostController     as AdminPostController,
     CategoryController as AdminCategoryController,
-    TagController as AdminTagController,
-    CommentController as AdminCommentController
+    TagController      as AdminTagController,
+    CommentController  as AdminCommentController,
 };
 
 // Sitemap
@@ -34,21 +34,26 @@ use Spatie\Sitemap\Tags\Url;
 |--------------------------------------------------------------------------
 */
 
-// Landing page (ONLY define once)
+// Landing page
 Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
 // News homepage
 Route::get('/news', [HomeController::class, 'index'])->name('news.index');
 
-// Single post (SEO friendly slug)
+// Single post (SEO-friendly slug)
 Route::get('/news/{slug}', [PostController::class, 'show'])
     ->name('post.show')
     ->where('slug', '[a-z0-9\-]+');
 
-// Store comment (rate limited)
-Route::post('/news/{slug}/comments', [PostController::class, 'storeComment'])
+// Post a comment or reply (rate-limited: 5 per minute per IP)
+Route::post('/news/{slug}/comments', [CommentController::class, 'store'])
     ->name('post.comment')
-    ->middleware('throttle:5,1'); // max 5 per minute
+    ->middleware('throttle:5,1');
+
+// Like a comment — JSON response (rate-limited: 30 per minute per IP)
+Route::post('/comments/{comment}/like', [CommentController::class, 'like'])
+    ->name('comment.like')
+    ->middleware('throttle:30,1');
 
 // Search
 Route::get('/search', [SearchController::class, 'index'])->name('search');
@@ -58,17 +63,19 @@ Route::get('/author/{id}', [AuthorController::class, 'show'])
     ->name('author.show')
     ->where('id', '[0-9]+');
 
-// Category
+// Category archive
 Route::get('/category/{slug}', [CategoryController::class, 'show'])
     ->name('category.show')
     ->where('slug', '[a-z0-9\-]+');
 
-// Tag
+// Tag archive
 Route::get('/tag/{slug}', [AdminTagController::class, 'show'])
     ->name('tag.show')
     ->where('slug', '[a-z0-9\-]+');
 
 
+
+    //dashboard
 /*
 |--------------------------------------------------------------------------
 | AUTHENTICATED USER ROUTES
@@ -77,11 +84,9 @@ Route::get('/tag/{slug}', [AdminTagController::class, 'show'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -94,62 +99,62 @@ Route::middleware(['auth', 'verified'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('admin')
-    ->name('admin.')
+Route::prefix('dashboard')
+    ->name('dashboard.')
     ->middleware(['auth', 'verified'])
     ->group(function () {
 
-        // Admin Dashboard
-        Route::get('/', [AdminDashboardController::class, 'index'])
-            ->name('dashboard');
+        // Dashboard
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        /*
-        |-----------------------------------
-        | Posts
-        |-----------------------------------
-        */
+        // Posts
         Route::resource('posts', AdminPostController::class);
 
-        /*
-        |-----------------------------------
-        | Categories
-        |-----------------------------------
-        */
+        // Categories
         Route::resource('categories', AdminCategoryController::class);
 
-        /*
-        |-----------------------------------
-        | Tags
-        |-----------------------------------
-        */
-        Route::resource('tags', AdminTagController::class)
-            ->except(['show']); // no public show
+        // Tags (no individual show page)
+        Route::resource('tags', AdminTagController::class)->except(['show']);
 
         /*
-        |-----------------------------------
-        | Comments Management
-        |-----------------------------------
+        |----------------------------------------------------------------------
+        | Comments moderation
+        |
+        | IMPORTANT: static-segment routes (approve-all, bulk-*) MUST be
+        | registered BEFORE the {comment} wildcard routes so Laravel does not
+        | attempt to resolve "approve-all" or "bulk-delete" as a model ID.
+        |----------------------------------------------------------------------
         */
+
+        // List all comments
         Route::get('comments', [AdminCommentController::class, 'index'])
             ->name('comments.index');
 
-        Route::patch('comments/{comment}/approve', [AdminCommentController::class, 'approve'])
-            ->name('comments.approve');
-
-        Route::patch('comments/{comment}/disapprove', [AdminCommentController::class, 'disapprove'])
-            ->name('comments.disapprove');
-
+            
+        // Bulk actions — registered before {comment} wildcard
         Route::patch('comments/approve-all', [AdminCommentController::class, 'approveAll'])
             ->name('comments.approveAll');
 
         Route::post('comments/bulk-approve', [AdminCommentController::class, 'bulkApprove'])
             ->name('comments.bulk-approve');
 
-        Route::delete('comments/{comment}', [AdminCommentController::class, 'destroy'])
-            ->name('comments.destroy');
-
         Route::delete('comments/bulk-delete', [AdminCommentController::class, 'bulkDelete'])
             ->name('comments.bulk-delete');
+
+        // Single-comment actions — after static routes
+        Route::patch('comments/{comment}/approve', [AdminCommentController::class, 'approve'])
+            ->name('comments.approve');
+
+        Route::patch('comments/{comment}/disapprove', [AdminCommentController::class, 'disapprove'])
+            ->name('comments.disapprove');
+
+        Route::delete('comments/{comment}', [AdminCommentController::class, 'destroy'])
+            ->name('comments.destroy');
+    });
+
+    // System Logs
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/logs', [App\Http\Controllers\Admin\LogController::class, 'index'])->name('admin.logs');
 });
 
 
@@ -158,6 +163,7 @@ Route::prefix('admin')
 | AUTH ROUTES (Laravel Breeze / Jetstream)
 |--------------------------------------------------------------------------
 */
+
 require __DIR__ . '/auth.php';
 
 
@@ -167,7 +173,7 @@ require __DIR__ . '/auth.php';
 |--------------------------------------------------------------------------
 */
 
-// Sitemap (cached for performance)
+// Sitemap (cached for 1 hour)
 Route::get('/sitemap.xml', function () {
     return cache()->remember('sitemap_xml', now()->addHour(), function () {
 
@@ -183,7 +189,6 @@ Route::get('/sitemap.xml', function () {
                     ->setPriority(0.9)
             );
 
-        // Posts
         \App\Models\Post::where('status', 'published')
             ->latest('published_at')
             ->each(function ($post) use ($sitemap) {
@@ -195,7 +200,6 @@ Route::get('/sitemap.xml', function () {
                 );
             });
 
-        // Categories
         \App\Models\Category::all()->each(function ($cat) use ($sitemap) {
             $sitemap->add(
                 Url::create("/category/{$cat->slug}")
@@ -209,7 +213,7 @@ Route::get('/sitemap.xml', function () {
 })->name('sitemap');
 
 
-// RSS Feed
+// RSS feed
 Route::get('/feed.xml', function () {
 
     $posts = \App\Models\Post::published()
@@ -228,10 +232,13 @@ Route::get('/feed.xml', function () {
 // robots.txt
 Route::get('/robots.txt', function () {
 
-    return response(
-        "User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: " . url('/sitemap.xml') . "\n",
-        200,
-        ['Content-Type' => 'text/plain']
-    );
+    $content = implode("\n", [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /dashboard/',
+        'Sitemap: ' . url('/sitemap.xml'),
+    ]);
+
+    return response($content, 200, ['Content-Type' => 'text/plain']);
 
 })->name('robots');

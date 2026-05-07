@@ -54,7 +54,7 @@
                 position: absolute;
                 inset: 0;
                 background:
-                    url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=75&auto=format&fit=crop') center/cover no-repeat;
+                    url('/images/login-bg.jpg') center/cover no-repeat;
                 opacity: 0.14;
                 filter: saturate(1.6) hue-rotate(200deg);
             }

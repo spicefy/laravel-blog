@@ -1,5 +1,5 @@
 <?php
-
+//contrrollers/Admin/PostController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -21,7 +21,7 @@ class PostController extends Controller
             ->latest()
             ->paginate(10);
         
-        return view('admin.posts.index', compact('posts'));
+        return view('dashboard.posts.index', compact('posts'));
     }
 
     /**
@@ -31,7 +31,7 @@ class PostController extends Controller
     {
         $categories = Category::all();
         $allTags = Tag::all();
-        return view('admin.posts.create', compact('categories', 'allTags'));
+        return view('dashboard.posts.create', compact('categories', 'allTags'));
     }
 
     /**
@@ -81,7 +81,7 @@ class PostController extends Controller
             $post->tags()->sync($request->tags);
         }
         
-        return redirect()->route('admin.posts.index')
+        return redirect()->route('dashboard.posts.index')
             ->with('success', 'Post created successfully.');
     }
 
@@ -90,7 +90,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        return view('admin.posts.show', compact('post'));
+        return view('dashboard.posts.show', compact('post'));
     }
 
     /**
@@ -100,7 +100,7 @@ class PostController extends Controller
     {
         $categories = Category::all();
         $allTags = Tag::all();
-        return view('admin.posts.edit', compact('post', 'categories', 'allTags'));
+        return view('dashboard.posts.edit', compact('post', 'categories', 'allTags'));
     }
 
     /**
@@ -157,7 +157,7 @@ class PostController extends Controller
             $post->tags()->sync([]);
         }
         
-        return redirect()->route('admin.posts.index')
+        return redirect()->route('dashboard.posts.index')
             ->with('success', 'Post updated successfully.');
     }
 
@@ -177,7 +177,7 @@ class PostController extends Controller
         // Delete the post
         $post->delete();
         
-        return redirect()->route('admin.posts.index')
+        return redirect()->route('dashboard.posts.index')
             ->with('success', 'Post deleted successfully.');
     }
 }
