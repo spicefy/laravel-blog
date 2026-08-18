@@ -2,7 +2,7 @@
 
 // app/Http/Controllers/Admin/LogController.php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Blog;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
