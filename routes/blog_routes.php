@@ -6,8 +6,8 @@ use App\Http\Controllers\Blog\HomeController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\Blog\CategoryController;
 use App\Http\Controllers\Blog\PostController;
-use App\Http\Controllers\SearchController;
-use App\Http\Controllers\CommentController;
+use App\Http\Controllers\Blog\SearchController;
+use App\Http\Controllers\Blog\CommentController;
 
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;

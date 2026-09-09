@@ -34,8 +34,8 @@ return new class extends Migration
             $table->text('comment');
 
             // ── Moderation ────────────────────────────────────────────────
-            // Comments default to unapproved; admin must approve before they appear
             $table->boolean('approved')->default(false);
+            $table->string('ip_address', 45)->nullable(); // spam/abuse tracking
 
             // ── Engagement ────────────────────────────────────────────────
             $table->unsignedInteger('likes')->default(0);
@@ -43,11 +43,7 @@ return new class extends Migration
             $table->timestamps();
 
             // ── Indexes ───────────────────────────────────────────────────
-            // Most common query: load approved top-level comments for a post
-            //   Comment::where('post_id', $id)->whereNull('parent_id')->where('approved', true)
             $table->index(['post_id', 'approved'], 'comments_post_approved_index');
-
-            // Used when loading pending comments in admin moderation view
             $table->index('approved');
         });
     }

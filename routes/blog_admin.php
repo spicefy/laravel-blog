@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Admin\{
+use App\Http\Controllers\Admin\Blog\{
     DashboardController as AdminDashboardController,
     PostController as AdminPostController,
     CategoryController as AdminCategoryController,
